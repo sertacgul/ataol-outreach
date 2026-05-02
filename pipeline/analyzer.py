@@ -14,7 +14,7 @@ ATAOL_CONTEXT = """ATAOL AI Techs, iki ayrı platform sunan bir teknoloji sirket
 - Geleneksel yonetim danismanliginin yaklasik 150'de 1 fiyatina ayni kalitede cikti.
 - Sektor analizi, rekabet konumlandirmasi, pazar dinamikleri ve stratejik projeksiyonlar.
 
-2. ActLedger - Performans ve Operasyon Yonetim Platformu:
+2. ActLedger - Operasyonel Mukemmellik Sistem Platformu:
 - 15 sektor, 576+ departman, 7800+ hazir KPI ile dunyanin en kapsamli sektor-spesifik KPI kutuphanesi.
 - 5 katmanli performans olcum cercevesi (Performance, Quality, Time, Risk, AI Insight).
 - Sektor secimi ile dakikalar icinde tam operasyonel cerceve kurulumu - kurumsal cozumlerin aksine aylar degil.

@@ -19,7 +19,7 @@ Kendi platformlarimiz:
 - Geleneksel yonetim danismanliginin yaklasik 150'de 1 fiyatina ayni kalitede cikti
 - Sektor analizi, rekabet konumlandirmasi, pazar dinamikleri ve stratejik projeksiyonlar
 
-2. ActLedger - Performans ve Operasyon Yonetim Platformu:
+2. ActLedger - Operasyonel Mukemmellik Sistem Platformu:
 - 15 sektor, 576+ departman, 7800+ hazir KPI - dunyanin en kapsamli sektor-spesifik KPI kutuphanesi
 - 5 katmanli performans olcum cercevesi (Performance, Quality, Time, Risk, AI Insight)
 - Dakikalar icinde tam operasyonel cerceve kurulumu
@@ -238,7 +238,7 @@ def build_html_email(data, lang_code):
     <!-- Platform 2: ActLedger -->
     <div style="background:#f0fdf4;border-radius:10px;padding:20px 24px;margin:20px 0;border-left:4px solid #22d3ee;">
       <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; Act<span style="color:#22d3ee;">Ledger</span></p>
-      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">{"Performans ve Operasyon Yonetim Platformu" if lang_code == "tr" else "Performance & Operations Management Platform"}</p>
+      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">{"Operasyonel Mukemmellik Sistem Platformu" if lang_code == "tr" else "Operational Excellence System Platform"}</p>
       <p style="margin:8px 0 12px;font-size:13px;color:#444;">{al_value_prop}</p>
       {"".join(f'<p style="margin:0 0 6px;font-size:13px;color:#555;padding-left:8px;">&#10004; {s}</p>' for s in al_solutions)}
       <!-- Promo -->

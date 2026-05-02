@@ -1,8 +1,12 @@
 import re
+import sys
 import time
 import json
 import requests
 from urllib.parse import urljoin, urlparse
+
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 from bs4 import BeautifulSoup
 from google import genai
 from google.genai import types
