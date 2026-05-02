@@ -7,7 +7,7 @@ from pipeline.analyzer import parse_json_response
 
 client = genai.Client(api_key=Config.GEMINI_API_KEY)
 
-LOGO_URL = "https://sertacgul.github.io/strategythrust-dashboard/ataol-logo.png"
+LOGO_URL = "https://sertacgul.github.io/ataol-dashboard/ataol-logo.png"
 LINKEDIN_URL = "https://www.linkedin.com/company/ataol-ai-techs"
 LINKEDIN_ICON = "https://cdn-icons-png.flaticon.com/512/174/174857.png"
 
