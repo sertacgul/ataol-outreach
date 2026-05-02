@@ -40,7 +40,7 @@ ASLA "AI", "yapay zeka", "artificial intelligence" kullanma.
 Em-dash/en-dash kullanma, sadece kisa tire (-).
 McKinsey/BCG/Bain kurumsal ciddiyetinde ton.
 Fiyat bilgisi verme (rakam belirtme), avantaj olarak sun.
-Kampanya bilgisini (3 ay+1 ay / yillik %15) dogal bir sekilde ekle.
+Kampanya detaylarini (3 ay+1 ay / yillik %15) SADECE ActLedger bolumunde bahset, closing'de KULLANMA.
 
 JSON yapisi (markdown yok, kod blogu yok):
 {{
@@ -65,7 +65,7 @@ JSON yapisi (markdown yok, kod blogu yok):
   "al_solutions": ["Bu firmaya ozel ActLedger cozumu 1", "Cozum 2"],
   "innovation_highlights": ["Inovasyon/dunya ilki 1", "Inovasyon 2", "Inovasyon 3"],
   "services_note": "ATAOL'un platformlar disindaki hizmetlerini (otomasyon, mobil/web uygulama, ozel yazilim) firmaya ozel 1 cumlede bahset. Max 20 kelime.",
-  "closing": "Kapanıs - kisa gorusme talebiyle biten soru. Max 30 kelime.",
+  "closing": "Kapanıs - platformlarimizin firmaniza saglayacagi stratejik ve operasyonel degeri konusmak uzere kisa bir gorusme talebiyle biten soru. Kampanya detayi EKLEME. Max 30 kelime.",
   "cta_text": "Gorusme Planla (hedef dile cevir)"
 }}"""
 
@@ -248,7 +248,7 @@ def build_html_email(data, lang_code):
 
     <!-- Innovation Highlights -->
     <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:10px;padding:20px 24px;margin:20px 0;">
-      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:1px;">{"Inovasyon ve Dunya Ilkleri" if lang_code == "tr" else "Innovation Highlights"}</p>
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:1px;">{"\u0130novasyon ve D\u00fcnya \u0130lkleri" if lang_code == "tr" else "Innovation and World Firsts"}</p>
       {"".join(f'<p style="margin:0 0 8px;font-size:13px;color:#e0e0e0;padding-left:8px;">&#9733; {h}</p>' for h in innovation_highlights)}
     </div>
 
