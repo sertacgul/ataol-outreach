@@ -99,7 +99,7 @@ jobs:
           import sys; sys.path.insert(0, '.')
           from database import init_db; init_db()
           from pipeline.scraper import run_scraping
-          run_scraping(max_leads=50)
+          run_scraping(max_leads=20)
           "
 
       - name: Analyze companies
@@ -110,7 +110,7 @@ jobs:
           import sys; sys.path.insert(0, '.')
           from database import init_db; init_db()
           from pipeline.analyzer import run_analysis
-          run_analysis(max_leads=50)
+          run_analysis(max_leads=20)
           "
 
       - name: Generate emails
@@ -121,7 +121,7 @@ jobs:
           import sys; sys.path.insert(0, '.')
           from database import init_db; init_db()
           from pipeline.email_generator import run_email_generation
-          run_email_generation(max_leads=50)
+          run_email_generation(max_leads=20)
           "
 
       - name: Push results to dashboard repo
