@@ -48,6 +48,7 @@ Rules:
 - Polite but assertive
 - NEVER use "AI", "artificial intelligence" or any AI reference
 - No em-dashes or en-dashes
+- Add at the end: "Note: All meetings and communications will be conducted in English."
 
 Respond ONLY in valid JSON (no markdown):
 {{"subject": "Re: [previous subject]", "body_html": "<p>...</p>", "body_text": "..."}}"""

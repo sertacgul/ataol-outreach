@@ -93,7 +93,6 @@ def get_localized_system_prompt(language, language_name, country_code):
 
 CRITICAL: ALL field values must be written in {language_name}. Subject, greeting, intro, labels, challenges, solutions - EVERYTHING in {language_name}.
 GREETING: Use the formal greeting in {language_name}. NEVER use placeholders.
-Add to closing: "Note: All meetings and communications will be conducted in English."
 {STRUCTURED_OUTPUT_RULES}"""
 
 
@@ -258,7 +257,8 @@ def build_html_email(data, lang_code):
     <p style="margin:0 0 20px;font-size:12px;"><a href="https://www.ataolai.tech" style="color:#1976d2;text-decoration:none;font-weight:600;">www.ataolai.tech</a></p>
 
     <!-- Closing -->
-    <p style="margin:4px 0 24px;font-size:14px;color:#444;">{closing}</p>
+    <p style="margin:4px 0 12px;font-size:14px;color:#444;">{closing}</p>
+    {"" if lang_code == "tr" else '<p style="margin:0 0 20px;font-size:12px;color:#888;font-style:italic;">Note: All meetings and communications will be conducted in English.</p>'}
 
     <!-- Meeting Scheduler -->
     <div style="background:#f0f4ff;border-radius:10px;padding:20px 24px;margin:24px 0;border:1px solid #d0d9ed;">
@@ -356,6 +356,7 @@ def build_text_email(data, lang_code):
 www.ataolai.tech
 
 {data.get('closing', '')}
+{"" if lang_code == "tr" else "Note: All meetings and communications will be conducted in English."}
 
 {data.get('cta_text', '')}
 Reply to: sertacgul@strategythrust.com
