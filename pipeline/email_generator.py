@@ -229,7 +229,7 @@ def build_html_email(data, lang_code):
 
     <!-- Platform 1: StrategyThrust -->
     <div style="background:#f8f9fc;border-radius:10px;padding:20px 24px;margin:20px 0;border-left:4px solid #1976d2;">
-      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; StrategyThrust</p>
+      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; Strategy<span style="color:#1976d2;">Thrust</span></p>
       <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">{"Stratejik Karar Destek Platformu" if lang_code == "tr" else "Strategic Decision Support Platform"}</p>
       <p style="margin:8px 0 12px;font-size:13px;color:#444;">{st_value_prop}</p>
       {"".join(f'<p style="margin:0 0 6px;font-size:13px;color:#555;padding-left:8px;">&#10004; {s}</p>' for s in st_solutions)}
@@ -237,7 +237,7 @@ def build_html_email(data, lang_code):
 
     <!-- Platform 2: ActLedger -->
     <div style="background:#f0fdf4;border-radius:10px;padding:20px 24px;margin:20px 0;border-left:4px solid #22d3ee;">
-      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; ActLedger</p>
+      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; Act<span style="color:#22d3ee;">Ledger</span></p>
       <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">{"Performans ve Operasyon Yonetim Platformu" if lang_code == "tr" else "Performance & Operations Management Platform"}</p>
       <p style="margin:8px 0 12px;font-size:13px;color:#444;">{al_value_prop}</p>
       {"".join(f'<p style="margin:0 0 6px;font-size:13px;color:#555;padding-left:8px;">&#10004; {s}</p>' for s in al_solutions)}
