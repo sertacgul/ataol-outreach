@@ -1,0 +1,30 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+data/*.db
+
+# Gmail credentials
+gmail_auth/credentials.json
+gmail_auth/token.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual environment
+venv/
+.venv/
+
+# Logs
+data/*.log
+
+# Temp
+data/temp_*.json
