@@ -65,7 +65,7 @@ JSON yapisi (markdown yok, kod blogu yok):
   "al_solutions": ["Bu firmaya ozel ActLedger cozumu 1", "Cozum 2"],
   "innovation_highlights": ["Inovasyon/dunya ilki 1", "Inovasyon 2", "Inovasyon 3"],
   "services_note": "ATAOL'un platformlar disindaki hizmetlerini (otomasyon, mobil/web uygulama, ozel yazilim) firmaya ozel 1 cumlede bahset. Max 20 kelime.",
-  "closing": "Kapanıs - platformlarimizin firmaniza saglayacagi stratejik ve operasyonel degeri konusmak uzere kisa bir gorusme talebiyle biten soru. Kampanya detayi EKLEME. Max 30 kelime.",
+  "closing": "Kapanıs - 'Platformlarimizin [Firma Adi]'na saglayacagi katma degeri gorusmek uzere kisa bir toplanti planlayabilir miyiz? Sizinle calismaktan mutluluk duyacagiz.' seklinde bitir. Kampanya/indirim/fiyat EKLEME. Firma adini kullan. Hedef dile cevir.",
   "cta_text": "Gorusme Planla (hedef dile cevir)"
 }}"""
 
