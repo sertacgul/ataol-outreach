@@ -7,12 +7,13 @@ from pipeline.analyzer import parse_json_response
 
 client = genai.Client(api_key=Config.GEMINI_API_KEY)
 
-LOGO_URL = "https://sertacgul.github.io/strategythrust-dashboard/strategythrust_logo.png"
+LOGO_URL = "https://sertacgul.github.io/strategythrust-dashboard/ataol-logo.png"
 LINKEDIN_URL = "https://www.linkedin.com/company/ataol-ai-techs"
 LINKEDIN_ICON = "https://cdn-icons-png.flaticon.com/512/174/174857.png"
 
-ATAOL_INFO = """ATAOL AI Techs - iki platform sunan teknoloji sirketi:
+ATAOL_INFO = """ATAOL AI Techs - teknoloji ve yazilim cozumleri sirketi:
 
+Kendi platformlarimiz:
 1. StrategyThrust - Stratejik Karar Destek Platformu:
 - 72 saat icinde geleneksel danismanligin 3-6 aylik isini tamamlar
 - Geleneksel yonetim danismanliginin yaklasik 150'de 1 fiyatina ayni kalitede cikti
@@ -26,7 +27,11 @@ ATAOL_INFO = """ATAOL AI Techs - iki platform sunan teknoloji sirketi:
 - Mobil-first: iOS native app + PWA
 - Kampanya: 3 aylik lisans alanlara +1 ay ucretsiz | Yillik lisans alanlara %15 indirim
 
-Kurucu: Sertac Gul | strategythrust.com | actledger.com"""
+Kurumsal hizmetlerimiz:
+- Otomasyon cozumleri, mobil uygulama gelistirme (iOS/Android), web uygulama gelistirme
+- Is sureclerini dijitallestirme, ozel yazilim cozumleri
+
+Kurucu: Sertac Gul | ataolai.tech | strategythrust.com | actledger.com"""
 
 STRUCTURED_OUTPUT_RULES = """
 Asagidaki JSON yapisinda yanit ver. HER alan hedef dilde yazilmali.
@@ -59,6 +64,7 @@ JSON yapisi (markdown yok, kod blogu yok):
   "al_value_prop": "ActLedger deger onerisi. Sektor-spesifik KPI avantajini vurgula. Max 35 kelime.",
   "al_solutions": ["Bu firmaya ozel ActLedger cozumu 1", "Cozum 2"],
   "innovation_highlights": ["Inovasyon/dunya ilki 1", "Inovasyon 2", "Inovasyon 3"],
+  "services_note": "ATAOL'un platformlar disindaki hizmetlerini (otomasyon, mobil/web uygulama, ozel yazilim) firmaya ozel 1 cumlede bahset. Max 20 kelime.",
   "closing": "Kapanıs - kisa gorusme talebiyle biten soru. Max 30 kelime.",
   "cta_text": "Gorusme Planla (hedef dile cevir)"
 }}"""
@@ -169,9 +175,7 @@ def build_html_email(data, lang_code):
 
   <!-- Header -->
   <div style="background:linear-gradient(135deg,#0a0a1a 0%,#1a1a3e 50%,#0f2460 100%);padding:24px 30px 20px;border-radius:12px 12px 0 0;">
-    <table style="width:100%;" cellpadding="0" cellspacing="0"><tr>
-      <td><span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">ATAOL</span> <span style="font-size:14px;color:#4fc3f7;font-weight:600;">AI Techs</span></td>
-    </tr></table>
+    <img src="{LOGO_URL}" alt="ATAOL AI Techs" style="height:48px;" />
     <div style="margin-top:12px;height:3px;background:linear-gradient(90deg,#4fc3f7,#22d3ee,#1976d2,transparent);border-radius:2px;"></div>
   </div>
 
@@ -249,8 +253,12 @@ def build_html_email(data, lang_code):
       {"".join(f'<p style="margin:0 0 8px;font-size:13px;color:#e0e0e0;padding-left:8px;">&#9733; {h}</p>' for h in innovation_highlights)}
     </div>
 
+    <!-- Services Note -->
+    <p style="margin:16px 0 8px;font-size:13px;color:#555;">{data.get("services_note", "")}</p>
+    <p style="margin:0 0 20px;font-size:12px;"><a href="https://www.ataolai.tech" style="color:#1976d2;text-decoration:none;font-weight:600;">www.ataolai.tech</a></p>
+
     <!-- Closing -->
-    <p style="margin:20px 0 24px;font-size:14px;color:#444;">{closing}</p>
+    <p style="margin:4px 0 24px;font-size:14px;color:#444;">{closing}</p>
 
     <!-- Meeting Scheduler -->
     <div style="background:#f0f4ff;border-radius:10px;padding:20px 24px;margin:24px 0;border:1px solid #d0d9ed;">
@@ -277,9 +285,12 @@ def build_html_email(data, lang_code):
   <div style="background:#f8f9fa;padding:20px 30px;border-radius:0 0 12px 12px;border:1px solid #e8e8e8;border-top:none;">
     <table style="width:100%;" cellpadding="0" cellspacing="0"><tr>
       <td style="vertical-align:middle;">
-        <p style="margin:0 0 2px;font-size:12px;color:#666;">ATAOL AI Techs</p>
+        <p style="margin:0 0 2px;font-size:12px;color:#666;font-weight:600;">ATAOL AI Techs</p>
+        <p style="margin:0 0 2px;font-size:11px;color:#888;">{"Otomasyon, Mobil & Web Uygulama, Ozel Yazilim Cozumleri" if lang_code == "tr" else "Automation, Mobile & Web Apps, Custom Software Solutions"}</p>
         <p style="margin:0 0 2px;font-size:12px;color:#666;">+90 532 201 3416</p>
         <p style="margin:0;font-size:12px;">
+          <a href="https://www.ataolai.tech" style="color:#1a1a2e;text-decoration:none;font-weight:600;">ataolai.tech</a>
+          &nbsp;|&nbsp;
           <a href="https://strategythrust.com" style="color:#1976d2;text-decoration:none;">strategythrust.com</a>
           &nbsp;|&nbsp;
           <a href="https://actledger.com" style="color:#22d3ee;text-decoration:none;">actledger.com</a>
@@ -341,6 +352,9 @@ def build_text_email(data, lang_code):
 
 {innovation_text}
 
+{data.get('services_note', '')}
+www.ataolai.tech
+
 {data.get('closing', '')}
 
 {data.get('cta_text', '')}
@@ -348,8 +362,9 @@ Reply to: sertacgul@strategythrust.com
 
 --
 Sertac Gul | Founder, ATAOL AI Techs
+Otomasyon, Mobil & Web Uygulama, Ozel Yazilim Cozumleri
 Tel: +90 532 201 3416
-https://strategythrust.com | https://actledger.com
+https://www.ataolai.tech | https://strategythrust.com | https://actledger.com
 LinkedIn: {LINKEDIN_URL}
 
 {"Bu e-postayi almak istemiyorsaniz, lutfen 'abonelikten cik' yazarak yanit verin." if lang_code == "tr" else "If you'd prefer not to receive these emails, simply reply with 'unsubscribe'."}

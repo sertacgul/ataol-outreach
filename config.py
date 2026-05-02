@@ -35,5 +35,6 @@ class Config:
 
     # Branding
     PLATFORM_NAME = "ATAOL AI Techs"
+    ATAOL_URL = "https://www.ataolai.tech"
     STRATEGYTHRUST_URL = "https://strategythrust.com"
     ACTLEDGER_URL = "https://actledger.com"
