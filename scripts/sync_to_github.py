@@ -19,6 +19,7 @@ from database import get_db
 
 GIST_ID = os.getenv("GIST_ID", "")
 GIST_FILENAME = "emails.json"
+APPROVALS_FILENAME = "approvals.json"
 
 
 def compact_html(html):
@@ -81,10 +82,11 @@ def export_data_to_gist():
         print(f"Gist update error: {result.stderr[:300]}")
 
 
-def import_approvals_from_gist():
+def import_full_from_gist():
+    """Import all email and lead data from gist into local DB (for fresh CI runners)."""
     if not GIST_ID:
-        print("GIST_ID not configured. Skipping pull.")
-        return 0
+        print("GIST_ID not configured. Skipping full import.")
+        return
 
     result = subprocess.run(
         ["gh", "gist", "view", GIST_ID, "--filename", GIST_FILENAME, "--raw"],
@@ -93,16 +95,79 @@ def import_approvals_from_gist():
 
     if result.returncode != 0:
         print(f"Gist fetch error: {result.stderr}")
-        return 0
+        return
 
     data = json.loads(result.stdout)
     db = get_db()
-    updated = 0
 
+    # Get DB column names for safe insertion
+    lead_cols = [row[1] for row in db.execute("PRAGMA table_info(leads)").fetchall()]
+    email_cols = [row[1] for row in db.execute("PRAGMA table_info(emails)").fetchall()]
+
+    leads_imported = 0
+    for lead in data.get("leads", []):
+        lead_id = lead.get("id")
+        if not lead_id:
+            continue
+        if db.execute("SELECT 1 FROM leads WHERE id = ?", (lead_id,)).fetchone():
+            continue
+        cols = [c for c in lead.keys() if c in lead_cols]
+        vals = [json.dumps(lead[c]) if isinstance(lead[c], (list, dict)) else lead[c] for c in cols]
+        placeholders = ",".join(["?"] * len(cols))
+        try:
+            db.execute(f"INSERT INTO leads ({','.join(cols)}) VALUES ({placeholders})", vals)
+            leads_imported += 1
+        except Exception as e:
+            print(f"  Lead #{lead_id} import error: {e}")
+
+    emails_imported = 0
     for email in data.get("emails", []):
         email_id = email.get("id")
-        new_status = email.get("status")
-        if not email_id or not new_status:
+        if not email_id:
+            continue
+        if db.execute("SELECT 1 FROM emails WHERE id = ?", (email_id,)).fetchone():
+            continue
+        cols = [c for c in email.keys() if c in email_cols]
+        vals = [json.dumps(email[c]) if isinstance(email[c], (list, dict)) else email[c] for c in cols]
+        placeholders = ",".join(["?"] * len(cols))
+        try:
+            db.execute(f"INSERT INTO emails ({','.join(cols)}) VALUES ({placeholders})", vals)
+            emails_imported += 1
+        except Exception as e:
+            print(f"  Email #{email_id} import error: {e}")
+
+    db.commit()
+    db.close()
+    print(f"Full import: {leads_imported} leads, {emails_imported} emails from gist.")
+
+
+def import_approvals_from_gist():
+    """Read approvals.json from gist and apply status changes to local DB."""
+    if not GIST_ID:
+        print("GIST_ID not configured. Skipping pull.")
+        return 0
+
+    result = subprocess.run(
+        ["gh", "gist", "view", GIST_ID, "--filename", APPROVALS_FILENAME, "--raw"],
+        capture_output=True, text=True, encoding="utf-8",
+    )
+
+    if result.returncode != 0:
+        print(f"No approvals file in gist (normal if none approved yet).")
+        return 0
+
+    data = json.loads(result.stdout)
+    statuses = data.get("statuses", {})
+    if not statuses:
+        print("No status changes in approvals.")
+        return 0
+
+    db = get_db()
+    updated = 0
+
+    for email_id_str, new_status in statuses.items():
+        email_id = int(email_id_str)
+        if new_status not in ("approved", "rejected"):
             continue
 
         current = db.execute("SELECT status FROM emails WHERE id = ?", (email_id,)).fetchone()
@@ -110,8 +175,7 @@ def import_approvals_from_gist():
             continue
 
         old_status = current["status"]
-
-        if old_status == "pending_review" and new_status in ("approved", "rejected"):
+        if old_status == "pending_review":
             db.execute(
                 "UPDATE emails SET status = ?, reviewed_at = CURRENT_TIMESTAMP WHERE id = ?",
                 (new_status, email_id),
@@ -126,7 +190,7 @@ def import_approvals_from_gist():
 
     db.commit()
     db.close()
-    print(f"Imported {updated} status changes from gist.")
+    print(f"Imported {updated} status changes from approvals.")
     return updated
 
 

@@ -51,19 +51,21 @@ jobs:
             echo "Dashboard data imported"
           fi
 
-      - name: Create follow-up emails
+      - name: Import existing data and create follow-ups
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GH_TOKEN: ${{ secrets.GIST_PAT }}
           GIST_ID: ${{ secrets.GIST_ID }}
         run: |
           python -c "
           import sys; sys.path.insert(0, '.')
           from database import init_db; init_db()
           try:
-            from scripts.sync_to_github import import_approvals_from_gist
+            from scripts.sync_to_github import import_full_from_gist, import_approvals_from_gist
+            import_full_from_gist()
             import_approvals_from_gist()
           except Exception as e:
-            print(f'Pull error: {e}')
+            print(f'Import error: {e}')
           from pipeline.followup import create_pending_followups
           create_pending_followups()
           "

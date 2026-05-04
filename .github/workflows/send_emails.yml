@@ -52,7 +52,7 @@ jobs:
             echo "Dashboard data imported"
           fi
 
-      - name: Apply approvals from gist
+      - name: Import data and approvals from gist
         env:
           GH_TOKEN: ${{ secrets.GIST_PAT }}
           GIST_ID: ${{ secrets.GIST_ID }}
@@ -60,7 +60,8 @@ jobs:
           python -c "
           import sys; sys.path.insert(0, '.')
           from database import init_db; init_db()
-          from scripts.sync_to_github import import_approvals_from_gist
+          from scripts.sync_to_github import import_full_from_gist, import_approvals_from_gist
+          import_full_from_gist()
           import_approvals_from_gist()
           "
 
