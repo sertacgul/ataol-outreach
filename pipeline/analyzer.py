@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 from database import get_db, log_activity
 from config import Config
+from pipeline.email_validator import score_email, pick_best_email
 
 client = genai.Client(api_key=Config.GEMINI_API_KEY)
 
@@ -141,6 +142,22 @@ def run_analysis(max_leads=10):
     analyzed = 0
     for lead in leads:
         print(f"\nAnalyzing: {lead['company_name']} ({lead['website']})")
+
+        # Email quality gate - skip if no valid corporate email
+        best_email = lead["decision_maker_email"]
+        if not best_email:
+            emails_found = json.loads(lead["emails_found"]) if lead["emails_found"] else []
+            best_email = pick_best_email(emails_found)
+
+        if not best_email or score_email(best_email) < 1:
+            print(f"  No valid corporate email found, excluding lead.")
+            db.execute(
+                """UPDATE leads SET is_excluded = 1, exclude_reason = 'no_valid_email',
+                   analysis_status = 'skipped', updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+                (lead["id"],),
+            )
+            db.commit()
+            continue
 
         page_text = lead["analysis_raw"]
         if not page_text:

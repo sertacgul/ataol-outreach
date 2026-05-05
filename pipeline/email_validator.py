@@ -38,12 +38,24 @@ INVALID_EXTENSIONS = [
     ".pdf", ".doc", ".zip",
 ]
 
+# Blocked prefixes - these are NEVER valid outreach targets
+BLOCKED_PREFIXES = [
+    "support@", "help@", "destek@", "yardim@",
+    "sikayet@", "complaint@", "complaints@",
+    "musteri@", "musterihizmetleri@", "customer@", "customerservice@",
+    "abuse@", "spam@", "security@", "webmaster@",
+    "press@", "media@", "pr@", "basin@",
+    "careers@", "jobs@", "recruitment@", "ik@", "insankaynaklari@",
+    "privacy@", "legal@", "hukuk@", "kvkk@", "gdpr@",
+    "billing@", "invoice@", "fatura@", "muhasebe@",
+    "noreply@", "no-reply@", "donotreply@",
+]
+
 # Generic/low-value prefixes (deprioritize, don't exclude)
 GENERIC_PREFIXES = [
-    "info@", "contact@", "hello@", "support@", "help@",
-    "destek@", "iletisim@", "bilgi@", "press@", "media@",
-    "sales@", "satis@", "privacy@", "legal@", "hr@",
-    "careers@", "jobs@", "recruitment@", "marketing@",
+    "info@", "contact@", "hello@", "hi@",
+    "iletisim@", "bilgi@",
+    "sales@", "satis@", "marketing@",
 ]
 
 
@@ -90,6 +102,12 @@ def has_mx_record(domain):
             return False
 
 
+def is_blocked_prefix(email):
+    """Check if email has a blocked prefix (customer service, complaints, etc.)."""
+    email_lower = email.lower()
+    return any(email_lower.startswith(prefix) for prefix in BLOCKED_PREFIXES)
+
+
 def validate_email(email):
     """
     Validate an email address. Returns (is_valid, reason).
@@ -106,6 +124,10 @@ def validate_email(email):
     # KEP check
     if is_kep_address(email):
         return False, "kep_address"
+
+    # Blocked prefix check (support, complaints, customer service, etc.)
+    if is_blocked_prefix(email):
+        return False, "blocked_prefix"
 
     # Invalid pattern check
     if has_invalid_pattern(email):
@@ -147,16 +169,15 @@ def score_email(email):
     Score an email for quality. Higher = better.
     3: personal (name-based)
     2: role-based (ceo@, founder@)
-    1: generic (info@, contact@)
-    0: very generic (support@, press@)
+    1: generic but acceptable (info@, contact@)
     """
     local = email.split("@")[0].lower()
-    role_keywords = ["ceo", "founder", "cto", "coo", "director", "manager", "kurucu", "genel", "baskan", "owner"]
+    role_keywords = ["ceo", "founder", "cto", "coo", "director", "manager", "kurucu", "genel", "baskan", "owner", "md", "gm"]
 
     if any(kw in local for kw in role_keywords):
         return 2
     if is_generic_email(email):
-        return 1 if local in ("info", "contact", "hello", "iletisim") else 0
+        return 1
     # Likely a personal email (firstname, firstname.lastname, etc.)
     return 3
 

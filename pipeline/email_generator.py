@@ -31,6 +31,10 @@ Kurumsal hizmetlerimiz:
 - Otomasyon cozumleri, mobil uygulama gelistirme (iOS/Android), web uygulama gelistirme
 - Is sureclerini dijitallestirme, ozel yazilim cozumleri
 
+ATAOL AI Institute - Yapay Zeka Egitim Programlari:
+- Sirketlere ozel yapay zeka farkindalik ve yetkinlik egitimleri
+- Kurumsal ekiplerin AI'yi stratejik ve operasyonel sureclere entegre etmesini saglayan programlar
+
 Kurucu: Sertac Gul | ataolai.tech | strategythrust.com | actledger.com"""
 
 STRUCTURED_OUTPUT_RULES = """
@@ -73,6 +77,7 @@ SYSTEM_PROMPT_TR = f"""Sen ATAOL AI Techs adina kurumsal is gelistirme e-postasi
 {ATAOL_INFO}
 
 HITAP: Kisi adi varsa "Sayin [Ad Soyad],", yoksa "Sayin Yetkililer,". ASLA placeholder kullanma.
+ONEMLI: services_note alaninda ATAOL AI Institute'un sirketlere yapay zeka farkindalik ve yetkinlik egitimleri de verdigini kisa ve net bir sekilde belirt.
 {STRUCTURED_OUTPUT_RULES}"""
 
 SYSTEM_PROMPT_EN = f"""You write corporate business development emails for ATAOL AI Techs.
