@@ -420,14 +420,19 @@ Kisi unvani: {contact_title}
 
 Yukaridaki firma analiz verilerini kullanarak, {lang_name} dilinde ATAOL AI Techs'in iki platformunu (StrategyThrust + ActLedger) tanitan yapilandirilmis JSON ciktisi olustur."""
 
-    response = client.models.generate_content(
-        model=Config.GEMINI_MODEL,
-        contents=user_content,
+    from pipeline.gemini_utils import call_gemini
+    response = call_gemini(
+        client,
+        Config.GEMINI_MODEL,
+        user_content,
         config=types.GenerateContentConfig(
             system_instruction=system,
-            max_output_tokens=8192,
+            max_output_tokens=4096,
         ),
     )
+
+    if not response or not response.text:
+        return {"error": "No response from Gemini"}
 
     structured = parse_json_response(response.text)
     if not structured:

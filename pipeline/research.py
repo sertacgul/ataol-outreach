@@ -143,23 +143,23 @@ def search_leads_with_gemini(query, language="tr", exclude_names=None):
     if exclude_names:
         exclude_text = f"\n\nDaha once iletisim kurulmus firmalar - bunlari ONERME:\n{', '.join(exclude_names[:50])}"
 
-    try:
-        response = client.models.generate_content(
-            model=Config.GEMINI_MODEL,
-            contents=f"Arama sorgusu: {query}{exclude_text}",
-            config=types.GenerateContentConfig(
-                system_instruction=system,
-                max_output_tokens=8192,
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-            ),
-        )
+    from pipeline.gemini_utils import call_gemini
+
+    response = call_gemini(
+        client,
+        Config.GEMINI_MODEL,
+        f"Arama sorgusu: {query}{exclude_text}",
+        config=types.GenerateContentConfig(
+            system_instruction=system,
+            max_output_tokens=8192,
+            tools=[types.Tool(google_search=types.GoogleSearch())],
+        ),
+    )
+    if response and response.text:
         result = parse_json_response(response.text)
         if result and "companies" in result:
             return result["companies"]
-        return []
-    except Exception as e:
-        print(f"  Gemini search error: {e}")
-        return []
+    return []
 
 
 SKIP_DOMAINS = [

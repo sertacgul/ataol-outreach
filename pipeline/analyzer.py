@@ -96,16 +96,21 @@ def parse_json_response(text):
 def analyze_company(company_name, website, page_text, language="en"):
     """Analyze a company using Gemini API for dual-platform fit."""
     system = SYSTEM_PROMPT_TR if language == "tr" else SYSTEM_PROMPT_EN
-    prompt = f"Sirket: {company_name}\nWebsite: {website}\n\nWeb sitesi icerigi:\n{page_text[:8000]}"
+    prompt = f"Sirket: {company_name}\nWebsite: {website}\n\nWeb sitesi icerigi:\n{page_text[:5000]}"
 
-    response = client.models.generate_content(
-        model=Config.GEMINI_MODEL,
-        contents=prompt,
+    from pipeline.gemini_utils import call_gemini
+    response = call_gemini(
+        client,
+        Config.GEMINI_MODEL,
+        prompt,
         config=types.GenerateContentConfig(
             system_instruction=system,
-            max_output_tokens=8192,
+            max_output_tokens=4096,
         ),
     )
+
+    if not response or not response.text:
+        return {"error": "No response from Gemini"}
 
     response_text = response.text
     analysis = parse_json_response(response_text)

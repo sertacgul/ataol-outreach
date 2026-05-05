@@ -201,28 +201,31 @@ SADECE gecerli JSON yanit ver (markdown yok, kod blogu yok):
 
 Bulamazsan bos string ver: {{"email": "", "decision_maker": "", "decision_maker_title": ""}}"""
 
-        response = gemini_client.models.generate_content(
-            model=Config.GEMINI_MODEL,
-            contents=prompt,
+        from pipeline.gemini_utils import call_gemini
+        response = call_gemini(
+            gemini_client,
+            Config.GEMINI_MODEL,
+            prompt,
             config=types.GenerateContentConfig(
                 max_output_tokens=1024,
                 tools=[types.Tool(google_search=types.GoogleSearch())],
             ),
         )
 
-        text = response.text.strip()
-        if text.startswith("```"):
-            lines = text.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
-            text = "\n".join(lines)
+        if response and response.text:
+            text = response.text.strip()
+            if text.startswith("```"):
+                lines = text.split("\n")
+                lines = [l for l in lines if not l.strip().startswith("```")]
+                text = "\n".join(lines)
 
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            result = json.loads(text[start:end])
-            if result.get("email"):
-                print(f"  Gemini found: {result['email']} ({result.get('decision_maker', '')})")
-            return result
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            if start >= 0 and end > start:
+                result = json.loads(text[start:end])
+                if result.get("email"):
+                    print(f"  Gemini found: {result['email']} ({result.get('decision_maker', '')})")
+                return result
     except Exception as e:
         print(f"  Gemini contact search failed: {e}")
 

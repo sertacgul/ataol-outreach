@@ -28,7 +28,10 @@ class Config:
     FLASK_PORT = int(os.getenv("FLASK_PORT", "5001"))
 
     # Gemini
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    GEMINI_CALL_DELAY = float(os.getenv("GEMINI_CALL_DELAY", "2"))
+    GEMINI_RETRY_MAX = int(os.getenv("GEMINI_RETRY_MAX", "3"))
+    GEMINI_RETRY_BACKOFF = float(os.getenv("GEMINI_RETRY_BACKOFF", "2.0"))
 
     # Notifications
     NOTIFICATION_EMAIL = os.getenv("NOTIFICATION_EMAIL", "sertacgul@strategythrust.com")
