@@ -37,7 +37,7 @@ jobs:
           GMAIL_CREDENTIALS_PATH=gmail_auth/credentials.json
           GMAIL_TOKEN_PATH=gmail_auth/token.json
           MAX_EMAILS_PER_DAY=70
-          GEMINI_MODEL=gemini-2.0-flash-lite
+          GEMINI_MODEL=gemini-2.0-flash
           DATABASE_PATH=data/ataol.db
           GIST_ID=${{ secrets.GIST_ID }}
           ENVEOF
