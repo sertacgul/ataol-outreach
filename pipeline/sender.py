@@ -39,7 +39,6 @@ def send_single_email(service, email_record):
 
 
 def send_approved_batch(db):
-    from localization import is_business_hours
     from datetime import datetime
 
     if datetime.utcnow().weekday() >= 5:
@@ -64,7 +63,6 @@ def send_approved_batch(db):
 
     service = get_gmail_service()
     sent_count = 0
-    skipped_tz = 0
 
     for email_row in approved:
         if sent_count >= remaining:
@@ -72,10 +70,6 @@ def send_approved_batch(db):
 
         email_dict = dict(email_row)
         country = email_dict.get("country", "INT") or "INT"
-
-        if not is_business_hours(country):
-            skipped_tz += 1
-            continue
 
         print(f"Sending to: {email_dict['to_email']} ({country}) - {email_dict['subject']}")
 
@@ -124,8 +118,6 @@ def send_approved_batch(db):
 
         time.sleep(3)
 
-    if skipped_tz:
-        print(f"\nSkipped {skipped_tz} emails (outside business hours in recipient timezone).")
     print(f"Sent {sent_count}/{len(approved)} emails.")
     return sent_count
 
