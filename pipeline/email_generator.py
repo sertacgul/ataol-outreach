@@ -69,6 +69,7 @@ JSON yapisi (markdown yok, kod blogu yok):
   "al_solutions": ["Bu firmaya ozel ActLedger cozumu 1", "Cozum 2"],
   "innovation_highlights": ["Inovasyon/dunya ilki 1", "Inovasyon 2", "Inovasyon 3"],
   "services_note": "ATAOL'un platformlar disindaki hizmetlerini (otomasyon, mobil/web uygulama, ozel yazilim) firmaya ozel 1 cumlede bahset. Max 20 kelime.",
+  "institute_note": "ATAOL AI Institute - bu firmaya ozel kurumsal egitim onerisi. Ekiplerin stratejik ve operasyonel sureclerde yapay zekayi nasil kullanabilecegine dair 1-2 cumle. Max 30 kelime. SADECE Turkce firmalar icin doldur, diger diller icin bos birak.",
   "closing": "Kapanıs - 'Platformlarimizin [Firma Adi]'na saglayacagi katma degeri gorusmek uzere kisa bir toplanti planlayabilir miyiz? Sizinle calismaktan mutluluk duyacagiz.' seklinde bitir. Kampanya/indirim/fiyat EKLEME. Firma adini kullan. Hedef dile cevir.",
   "cta_text": "Gorusme Planla (hedef dile cevir)"
 }}"""
@@ -77,7 +78,7 @@ SYSTEM_PROMPT_TR = f"""Sen ATAOL AI Techs adina kurumsal is gelistirme e-postasi
 {ATAOL_INFO}
 
 HITAP: Kisi adi varsa "Sayin [Ad Soyad],", yoksa "Sayin Yetkililer,". ASLA placeholder kullanma.
-ONEMLI: services_note alaninda ATAOL AI Institute'un sirketlere yapay zeka farkindalik ve yetkinlik egitimleri de verdigini kisa ve net bir sekilde belirt.
+ZORUNLU: institute_note alanini MUTLAKA doldur. ATAOL AI Institute, sirketlere ozel kurumsal egitim programlari sunuyor - ekiplerin stratejik ve operasyonel sureclerde yapay zekayi nasil kullanabilecegine dair yetkinlik egitimleri. Bu firmaya ozel bir egitim onerisi yaz.
 {STRUCTURED_OUTPUT_RULES}"""
 
 SYSTEM_PROMPT_EN = f"""You write corporate business development emails for ATAOL AI Techs.
@@ -251,6 +252,13 @@ def build_html_email(data, lang_code):
       </div>
     </div>
 
+    <!-- ATAOL AI Institute (TR only) -->
+    {f"""<div style="background:#fef3c7;border-radius:10px;padding:20px 24px;margin:20px 0;border-left:4px solid #f59e0b;">
+      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1a1a2e;">&#9670; ATAOL AI <span style="color:#f59e0b;">Institute</span></p>
+      <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;">Kurumsal Yapay Zeka Egitim Programlari</p>
+      <p style="margin:8px 0 0;font-size:13px;color:#444;">{data.get('institute_note', '')}</p>
+    </div>""" if lang_code == "tr" and data.get('institute_note') else ""}
+
     <!-- Innovation Highlights -->
     <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:10px;padding:20px 24px;margin:20px 0;">
       <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#4fc3f7;text-transform:uppercase;letter-spacing:1px;">{"\u0130novasyon ve D\u00fcnya \u0130lkleri" if lang_code == "tr" else "Innovation and World Firsts"}</p>
@@ -354,7 +362,11 @@ def build_text_email(data, lang_code):
 {data.get('al_value_prop', '')}
 {al_solutions_text}
 {promo}
-
+{f"""
+--- ATAOL AI Institute ---
+Kurumsal Yapay Zeka Egitim Programlari
+{data.get('institute_note', '')}
+""" if lang_code == "tr" and data.get('institute_note') else ""}
 {innovation_text}
 
 {data.get('services_note', '')}
