@@ -499,7 +499,11 @@ def run_email_generation(max_leads=10):
         print(f"\nGenerating email for: {lead['company_name']} -> {to_email}")
         contacted_emails.add(to_email.lower())
 
-        email_data = generate_email(dict(lead), None, lead["language"])
+        try:
+            email_data = generate_email(dict(lead), None, lead["language"])
+        except Exception as e:
+            print(f"  Exception: {e}")
+            continue
 
         if email_data.get("error"):
             print(f"  Failed: {email_data['error']}")

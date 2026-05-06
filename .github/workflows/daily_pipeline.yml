@@ -83,6 +83,7 @@ jobs:
           "
 
       - name: Research new companies
+        continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -95,6 +96,7 @@ jobs:
           "
 
       - name: Scrape websites
+        continue-on-error: true
         run: |
           python -c "
           import sys; sys.path.insert(0, '.')
@@ -104,6 +106,7 @@ jobs:
           "
 
       - name: Analyze companies
+        continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -115,6 +118,7 @@ jobs:
           "
 
       - name: Generate emails
+        continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -126,6 +130,7 @@ jobs:
           "
 
       - name: Push results to dashboard repo
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GIST_PAT }}
           GIST_ID: ${{ secrets.GIST_ID }}
