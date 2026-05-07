@@ -462,6 +462,13 @@ def run_email_generation(max_leads=10):
             print(f"  Already contacted {to_email}, skipping.")
             continue
 
+        # SMTP verification - skip invalid addresses
+        from pipeline.email_validator import validate_email
+        is_valid, reason = validate_email(to_email)
+        if not is_valid:
+            print(f"  Email rejected ({reason}): {to_email}, skipping.")
+            continue
+
         print(f"\nGenerating email for: {lead['company_name']} -> {to_email}")
         contacted_emails.add(to_email.lower())
 

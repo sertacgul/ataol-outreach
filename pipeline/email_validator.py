@@ -2,13 +2,15 @@
 Email validation module.
 - Filters KEP (Kayitli Elektronik Posta) addresses
 - Filters placeholder/invalid patterns
-- Verifies domain has valid MX records (can receive email)
+- Verifies domain has valid MX records via DNS
+- SMTP RCPT TO verification (checks if mailbox actually exists)
 - Validates email format
 """
 
 import re
 import socket
-import struct
+import smtplib
+import dns.resolver
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 
@@ -29,6 +31,7 @@ INVALID_PATTERNS = [
     "donotreply@", "bounce@", "unsubscribe@",
     "sentry.io", "wixpress.com", "hubspot.com",
     "mailchimp.com", "sendgrid.net", "amazonaws.com",
+    "acme.com", "placeholder.com",
 ]
 
 # File extension patterns caught as emails
@@ -42,13 +45,24 @@ INVALID_EXTENSIONS = [
 BLOCKED_PREFIXES = [
     "support@", "help@", "destek@", "yardim@",
     "sikayet@", "complaint@", "complaints@",
-    "musteri@", "musterihizmetleri@", "customer@", "customerservice@",
+    "musteri@", "musterihizmetleri@", "customer@", "customerservice@", "customercare@",
     "abuse@", "spam@", "security@", "webmaster@",
     "press@", "media@", "pr@", "basin@",
-    "careers@", "jobs@", "recruitment@", "ik@", "insankaynaklari@",
+    "careers@", "jobs@", "recruitment@", "ik@", "insankaynaklari@", "join@",
     "privacy@", "legal@", "hukuk@", "kvkk@", "gdpr@",
-    "billing@", "invoice@", "fatura@", "muhasebe@",
+    "billing@", "invoice@", "fatura@", "muhasebe@", "accounting@",
     "noreply@", "no-reply@", "donotreply@",
+    "giving@", "donate@", "donations@",
+    "akademi@", "academy@", "training@", "egitim@",
+    "feedback@", "survey@", "anket@",
+    "newsletter@", "subscribe@",
+    "events@", "event@", "etkinlik@",
+    "dev@", "devops@", "engineering@", "tech@",
+    "patientsupport@", "patient@",
+    "community@", "forum@",
+    "demo@", "trial@",
+    "orders@", "siparis@", "shop@",
+    "reservations@", "booking@", "rezervasyon@",
 ]
 
 # Generic/low-value prefixes (deprioritize, don't exclude)
@@ -57,6 +71,10 @@ GENERIC_PREFIXES = [
     "iletisim@", "bilgi@",
     "sales@", "satis@", "marketing@",
 ]
+
+# Cache for MX lookups and SMTP checks
+_mx_cache = {}
+_smtp_cache = {}
 
 
 def is_kep_address(email):
@@ -68,11 +86,9 @@ def is_kep_address(email):
 def has_invalid_pattern(email):
     """Check if email matches known invalid/placeholder patterns."""
     email_lower = email.lower()
-    # Check patterns
     for pattern in INVALID_PATTERNS:
         if pattern in email_lower:
             return True
-    # Check file extensions
     for ext in INVALID_EXTENSIONS:
         if email_lower.endswith(ext):
             return True
@@ -84,31 +100,92 @@ def is_valid_format(email):
     return bool(EMAIL_REGEX.match(email))
 
 
-def has_mx_record(domain):
-    """Check if domain has MX records using DNS lookup."""
+def get_mx_hosts(domain):
+    """Get MX hosts for a domain using dnspython. Returns sorted list of (priority, host)."""
+    if domain in _mx_cache:
+        return _mx_cache[domain]
+
+    mx_hosts = []
     try:
-        # Use socket to resolve MX
-        socket.setdefaulttimeout(5)
-        # Try to get MX records via getaddrinfo as a proxy
-        # (full MX lookup needs dnspython, this checks if domain resolves at all)
-        results = socket.getaddrinfo(domain, 25, socket.AF_INET, socket.SOCK_STREAM)
-        return len(results) > 0
-    except (socket.gaierror, socket.timeout, OSError):
-        # Fallback: check if domain resolves at all (A record)
+        answers = dns.resolver.resolve(domain, 'MX')
+        for rdata in answers:
+            mx_hosts.append((rdata.preference, str(rdata.exchange).rstrip('.')))
+        mx_hosts.sort(key=lambda x: x[0])
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers, dns.exception.Timeout):
+        pass
+
+    _mx_cache[domain] = mx_hosts
+    return mx_hosts
+
+
+def has_mx_record(domain):
+    """Check if domain has MX records."""
+    return len(get_mx_hosts(domain)) > 0
+
+
+def verify_smtp(email, timeout=10):
+    """
+    Verify email exists via SMTP RCPT TO.
+    Returns (exists, reason):
+      - (True, "verified") - mailbox confirmed
+      - (True, "catch_all") - server accepts everything, can't confirm
+      - (False, "rejected") - server explicitly rejected
+      - (None, "inconclusive") - couldn't connect or timed out
+    """
+    if email in _smtp_cache:
+        return _smtp_cache[email]
+
+    domain = email.split("@")[-1]
+    mx_hosts = get_mx_hosts(domain)
+
+    if not mx_hosts:
+        result = (False, "no_mx")
+        _smtp_cache[email] = result
+        return result
+
+    for _, mx_host in mx_hosts[:2]:
         try:
-            socket.gethostbyname(domain)
-            return True
-        except (socket.gaierror, socket.timeout):
-            return False
+            smtp = smtplib.SMTP(timeout=timeout)
+            smtp.connect(mx_host, 25)
+            smtp.helo("ataolai.tech")
+
+            smtp.mail("verify@ataolai.tech")
+            code, _ = smtp.rcpt(email)
+
+            # Check catch-all: try a random address that shouldn't exist
+            fake_email = f"zqxwce_nonexistent_12345@{domain}"
+            catch_code, _ = smtp.rcpt(fake_email)
+
+            smtp.quit()
+
+            if code == 250:
+                if catch_code == 250:
+                    result = (True, "catch_all")
+                else:
+                    result = (True, "verified")
+            elif code >= 500:
+                result = (False, "rejected")
+            else:
+                result = (None, "inconclusive")
+
+            _smtp_cache[email] = result
+            return result
+
+        except (smtplib.SMTPException, socket.error, socket.timeout, OSError):
+            continue
+
+    result = (None, "inconclusive")
+    _smtp_cache[email] = result
+    return result
 
 
 def is_blocked_prefix(email):
-    """Check if email has a blocked prefix (customer service, complaints, etc.)."""
+    """Check if email has a blocked prefix."""
     email_lower = email.lower()
     return any(email_lower.startswith(prefix) for prefix in BLOCKED_PREFIXES)
 
 
-def validate_email(email):
+def validate_email(email, skip_smtp=False):
     """
     Validate an email address. Returns (is_valid, reason).
     """
@@ -117,31 +194,31 @@ def validate_email(email):
 
     email = email.strip().lower()
 
-    # Format check
     if not is_valid_format(email):
         return False, "invalid_format"
 
-    # KEP check
     if is_kep_address(email):
         return False, "kep_address"
 
-    # Blocked prefix check (support, complaints, customer service, etc.)
     if is_blocked_prefix(email):
         return False, "blocked_prefix"
 
-    # Invalid pattern check
     if has_invalid_pattern(email):
         return False, "invalid_pattern"
 
-    # Domain MX check
     domain = email.split("@")[-1]
     if not has_mx_record(domain):
         return False, "no_mx_record"
 
+    if not skip_smtp:
+        exists, smtp_reason = verify_smtp(email)
+        if exists is False:
+            return False, f"smtp_{smtp_reason}"
+
     return True, "valid"
 
 
-def validate_and_filter_emails(emails):
+def validate_and_filter_emails(emails, skip_smtp=False):
     """
     Validate a list of emails. Returns (valid_emails, rejected_with_reasons).
     """
@@ -149,7 +226,7 @@ def validate_and_filter_emails(emails):
     rejected = []
 
     for email in emails:
-        is_valid, reason = validate_email(email)
+        is_valid, reason = validate_email(email, skip_smtp=skip_smtp)
         if is_valid:
             valid.append(email)
         else:
@@ -170,23 +247,32 @@ def score_email(email):
     3: personal (name-based)
     2: role-based (ceo@, founder@)
     1: generic but acceptable (info@, contact@)
+    0: unverified via SMTP
     """
     local = email.split("@")[0].lower()
     role_keywords = ["ceo", "founder", "cto", "coo", "director", "manager", "kurucu", "genel", "baskan", "owner", "md", "gm"]
 
+    base_score = 1
     if any(kw in local for kw in role_keywords):
-        return 2
-    if is_generic_email(email):
-        return 1
-    # Likely a personal email (firstname, firstname.lastname, etc.)
-    return 3
+        base_score = 2
+    elif not is_generic_email(email):
+        base_score = 3
+
+    # Boost if SMTP verified
+    exists, reason = verify_smtp(email)
+    if exists is True and reason == "verified":
+        return base_score + 1
+    elif exists is False:
+        return 0
+
+    return base_score
 
 
 def pick_best_email(emails):
-    """Pick the best email from a list, preferring personal > role > generic."""
+    """Pick the best email from a list, preferring verified personal > role > generic."""
     if not emails:
         return ""
-    valid, _ = validate_and_filter_emails(emails)
+    valid, _ = validate_and_filter_emails(emails, skip_smtp=True)
     if not valid:
         return ""
     scored = sorted(valid, key=score_email, reverse=True)
