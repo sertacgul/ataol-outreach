@@ -127,48 +127,7 @@ def build_html_email(data, lang_code):
     cta_text = data.get("cta_text", "Schedule a Call")
     company_name = data.get("_company_name", "")
 
-    # Meeting time slots
-    from datetime import datetime, timedelta
-    from urllib.parse import quote
-    now = datetime.utcnow()
-    slots = []
-    day = now + timedelta(days=2)
-    while len(slots) < 3:
-        if day.weekday() < 5:
-            slots.append(day)
-        day += timedelta(days=1)
-
-    SLOT_LABELS = {
-        "tr": {"instruction": "Size uygun olan zamani secin:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Baska bir zaman onerin"},
-        "en": {"instruction": "Select a time that works for you:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Suggest another time"},
-        "de": {"instruction": "Wahlen Sie eine passende Zeit:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Anderen Termin vorschlagen"},
-        "fr": {"instruction": "Choisissez un creneau qui vous convient :", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Proposer un autre horaire"},
-        "pt": {"instruction": "Selecione um horario conveniente:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Sugerir outro horario"},
-        "ja": {"instruction": "ご都合の良い日時をお選びください:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "別の日時を提案する"},
-        "es": {"instruction": "Seleccione un horario conveniente:", "morning": "10:00 - 10:30", "afternoon": "14:00 - 14:30", "other": "Sugerir otro horario"},
-    }
-    sl = SLOT_LABELS.get(lang_code, SLOT_LABELS["en"])
-    slot_instruction = sl["instruction"]
-
-    day_names_tr = ["Pzt", "Sal", "Car", "Per", "Cum", "Cmt", "Paz"]
-    day_names_en = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    month_names_tr = ["", "Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"]
-
-    def format_slot_label(dt, time_str):
-        if lang_code == "tr":
-            return f"{day_names_tr[dt.weekday()]} {dt.day} {month_names_tr[dt.month]} - {time_str}"
-        return f"{day_names_en[dt.weekday()]} {dt.strftime('%b %d')} - {time_str}"
-
-    slot_labels = [
-        format_slot_label(slots[0], sl["morning"]),
-        format_slot_label(slots[1], sl["afternoon"]),
-        sl["other"],
-    ]
-
-    mailto_subject = quote(f"Meeting Request - ATAOL AI Techs x {company_name}")
-    mailto_body_1 = quote(f"Hello,\n\nI would like to schedule a meeting.\n\nPreferred time: {slot_labels[0]}\n\nBest regards")
-    mailto_body_2 = quote(f"Hello,\n\nI would like to schedule a meeting.\n\nPreferred time: {slot_labels[1]}\n\nBest regards")
-    mailto_body_3 = quote(f"Hello,\n\nI would like to schedule a meeting.\n\nPreferred time: \n\nBest regards")
+    booking_url = data.get("_booking_url", "mailto:sertacgul@strategythrust.com")
 
     # Promo text
     promo_tr = "3 aylik lisans alanlara +1 ay ucretsiz kullanim | Yillik lisans alanlara %15 indirim"
@@ -274,20 +233,10 @@ def build_html_email(data, lang_code):
     {"" if lang_code == "tr" else '<p style="margin:0 0 20px;font-size:12px;color:#888;font-style:italic;">Note: All meetings and communications will be conducted in English.</p>'}
 
     <!-- Meeting Scheduler -->
-    <div style="background:#f0f4ff;border-radius:10px;padding:20px 24px;margin:24px 0;border:1px solid #d0d9ed;">
-      <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#1a1a2e;">{cta_text}</p>
-      <p style="margin:0 0 12px;font-size:12px;color:#666;">{slot_instruction}</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <a href="mailto:sertacgul@strategythrust.com?subject={mailto_subject}&body={mailto_body_1}" style="display:inline-block;background:#ffffff;border:1px solid #1976d2;color:#1976d2;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;text-align:center;min-width:140px;">
-          {slot_labels[0]}
-        </a>
-        <a href="mailto:sertacgul@strategythrust.com?subject={mailto_subject}&body={mailto_body_2}" style="display:inline-block;background:#ffffff;border:1px solid #1976d2;color:#1976d2;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;text-align:center;min-width:140px;">
-          {slot_labels[1]}
-        </a>
-        <a href="mailto:sertacgul@strategythrust.com?subject={mailto_subject}&body={mailto_body_3}" style="display:inline-block;background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#ffffff;padding:10px 16px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;text-align:center;min-width:140px;">
-          {slot_labels[2]}
-        </a>
-      </div>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="{booking_url}" style="display:inline-block;background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
+        {cta_text}
+      </a>
     </div>
 
     <p style="margin:0;font-size:13px;color:#333;">Sertac Gul<br>
@@ -336,6 +285,7 @@ def build_text_email(data, lang_code):
     promo_tr = "Kampanya: 3 aylik lisans alanlara +1 ay ucretsiz | Yillik lisans alanlara %15 indirim"
     promo_en = "Promotion: 3-month license +1 month free | Annual license 15% discount"
     promo = promo_tr if lang_code == "tr" else promo_en
+    booking_url = data.get("_booking_url", "mailto:sertacgul@strategythrust.com")
 
     text = f"""{data.get('greeting', '')}
 
@@ -376,7 +326,7 @@ www.ataolai.tech
 {"" if lang_code == "tr" else "Note: All meetings and communications will be conducted in English."}
 
 {data.get('cta_text', '')}
-Reply to: sertacgul@strategythrust.com
+{booking_url}
 
 --
 Sertac Gul | Founder, ATAOL AI Techs
@@ -451,6 +401,10 @@ Yukaridaki firma analiz verilerini kullanarak, {lang_name} dilinde ATAOL AI Tech
         return {"error": "Could not parse response", "raw": response.text}
 
     structured["_company_name"] = lead['company_name']
+
+    from localization import get_tz_offset
+    tz_offset = get_tz_offset(country)
+    structured["_booking_url"] = f"https://sertacgul.github.io/ataol-dashboard/book.html?company={__import__('urllib.parse', fromlist=['quote']).quote(lead['company_name'])}&tz={tz_offset}&lang={lang_code}"
 
     body_html = build_html_email(structured, lang_code)
     body_text = build_text_email(structured, lang_code)
