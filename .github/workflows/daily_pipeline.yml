@@ -36,7 +36,7 @@ jobs:
           NOTIFICATION_EMAIL=sertacgul@strategythrust.com
           MAX_EMAILS_PER_DAY=70
           SCRAPE_DELAY_SECONDS=1
-          GEMINI_MODEL=gemini-2.5-flash-preview-05-20
+          GEMINI_MODEL=gemini-2.5-flash
           DATABASE_PATH=data/ataol.db
           GIST_ID=${{ secrets.GIST_ID }}
           ENVEOF
