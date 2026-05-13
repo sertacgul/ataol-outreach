@@ -165,21 +165,32 @@ def scrape_company(website_url, language="tr"):
     for email, reason in rejected:
         print(f"    Rejected: {email} ({reason})")
 
-    # If no valid email found via scraping, ask Gemini
-    if not valid_emails:
-        gemini_result = find_contact_with_gemini(base_url, language)
-        if gemini_result.get("email"):
-            from pipeline.email_validator import validate_email
-            is_valid, reason = validate_email(gemini_result["email"])
-            if is_valid:
-                valid_emails.append(gemini_result["email"])
-            else:
-                print(f"    Gemini email rejected: {gemini_result['email']} ({reason})")
-        if gemini_result.get("decision_maker") and not decision_maker_name:
-            decision_maker_name = gemini_result["decision_maker"]
-            decision_maker_title = gemini_result.get("decision_maker_title", "")
+    # Ask Gemini to find decision maker (always, not just when no emails)
+    gemini_result = find_contact_with_gemini(base_url, language)
+    if gemini_result.get("decision_maker"):
+        decision_maker_name = gemini_result["decision_maker"]
+        decision_maker_title = gemini_result.get("decision_maker_title", "")
+    if gemini_result.get("email"):
+        from pipeline.email_validator import validate_email as val_email
+        is_valid, reason = val_email(gemini_result["email"])
+        if is_valid:
+            valid_emails.insert(0, gemini_result["email"])
+        else:
+            print(f"    Gemini email rejected: {gemini_result['email']} ({reason})")
 
-    best_email = pick_best_email(valid_emails) if valid_emails else ""
+    # Try email pattern guessing if we have a decision maker name
+    if decision_maker_name:
+        pattern_email = find_personal_email_by_pattern(decision_maker_name, base_url)
+        if pattern_email:
+            # Insert at top - this is the highest quality match
+            if pattern_email not in valid_emails:
+                valid_emails.insert(0, pattern_email)
+
+    # Filter out generic emails if we have a personal one
+    personal_emails = [e for e in valid_emails if not any(
+        e.lower().startswith(p) for p in ["info@", "contact@", "hello@", "iletisim@", "bilgi@", "sales@", "satis@"]
+    )]
+    best_email = personal_emails[0] if personal_emails else (pick_best_email(valid_emails) if valid_emails else "")
 
     return {
         "page_text": all_text[:10000],
@@ -190,16 +201,103 @@ def scrape_company(website_url, language="tr"):
     }
 
 
+def generate_email_patterns(first_name, last_name, domain):
+    """Generate likely email patterns from name + domain."""
+    if not first_name or not domain:
+        return []
+
+    first = first_name.lower().strip()
+    last = last_name.lower().strip() if last_name else ""
+
+    # Turkish char normalization
+    tr_map = str.maketrans({
+        '\u00e7': 'c', '\u011f': 'g', '\u0131': 'i', '\u00f6': 'o',
+        '\u015f': 's', '\u00fc': 'u', '\u00c7': 'c', '\u011e': 'g',
+        '\u0130': 'i', '\u00d6': 'o', '\u015e': 's', '\u00dc': 'u',
+    })
+    first = first.translate(tr_map)
+    last = last.translate(tr_map)
+
+    patterns = []
+    if last:
+        patterns = [
+            f"{first}.{last}@{domain}",
+            f"{first}{last}@{domain}",
+            f"{first[0]}{last}@{domain}",
+            f"{first}_{last}@{domain}",
+            f"{first[0]}.{last}@{domain}",
+            f"{last}.{first}@{domain}",
+            f"{first}@{domain}",
+            f"{last}@{domain}",
+            f"{first[0]}{last[0]}@{domain}",
+        ]
+    else:
+        patterns = [f"{first}@{domain}"]
+
+    return patterns
+
+
+def find_personal_email_by_pattern(decision_maker_name, website_url):
+    """Try to find decision maker's personal email using pattern guessing + SMTP."""
+    if not decision_maker_name or not website_url:
+        return ""
+
+    domain = urlparse(website_url).netloc.replace("www.", "")
+    if not domain:
+        return ""
+
+    parts = decision_maker_name.strip().split()
+    if len(parts) < 1:
+        return ""
+
+    first_name = parts[0]
+    last_name = parts[-1] if len(parts) > 1 else ""
+
+    patterns = generate_email_patterns(first_name, last_name, domain)
+    print(f"    Pattern search: trying {len(patterns)} patterns for {decision_maker_name}@{domain}")
+
+    from pipeline.email_validator import validate_email, verify_smtp
+
+    for email_guess in patterns:
+        is_valid, reason = validate_email(email_guess, skip_smtp=True)
+        if not is_valid:
+            continue
+
+        exists, smtp_reason = verify_smtp(email_guess, timeout=8)
+        if exists is True and smtp_reason == "verified":
+            print(f"    FOUND via pattern: {email_guess} (SMTP verified)")
+            return email_guess
+        elif exists is True and smtp_reason == "catch_all":
+            # Catch-all server - can't confirm, but first pattern is likely correct
+            print(f"    Likely match (catch-all): {email_guess}")
+            return email_guess
+
+    print(f"    No pattern match found for {decision_maker_name}@{domain}")
+    return ""
+
+
 def find_contact_with_gemini(website_url, language="tr"):
-    """Use Gemini with Google Search to find contact email and decision maker."""
+    """Use Gemini with Google Search to find decision maker name, title and email."""
     try:
-        prompt = f"""Bu sirketin iletisim e-posta adresini ve karar vericisini (CEO/Founder/Genel Mudur) bul:
+        domain = urlparse(website_url).netloc.replace("www.", "")
+        prompt = f"""Bu sirketin ust duzey karar vericisini bul (CEO, Founder, Kurucu, Genel Mudur, CTO, Managing Director):
 {website_url}
 
-SADECE gecerli JSON yanit ver (markdown yok, kod blogu yok):
-{{"email": "iletisim@sirket.com", "decision_maker": "Ad Soyad", "decision_maker_title": "CEO"}}
+ARAMA STRATEJISI:
+1. LinkedIn'de "{domain}" sirketindeki ust duzey yoneticileri ara
+2. Sirketin "Hakkimizda" veya "About" sayfasinda yonetim kadrosunu kontrol et
+3. Crunchbase, Bloomberg veya benzer kaynaklarda kurucu/CEO bilgisini ara
+4. Turkce firmalar icin sikayetvar, kariyer.net gibi kaynaklarda firma yoneticisini ara
 
-Bulamazsan bos string ver: {{"email": "", "decision_maker": "", "decision_maker_title": ""}}"""
+ONCELIK SIRASI: CEO/Founder > CTO/COO > Managing Director > VP > Director > Manager
+
+ONEMLI: Kisisel email adresini bul (ad.soyad@ veya ad@ formati). info@, contact@, iletisim@ gibi genel adresleri VERME.
+
+SADECE gecerli JSON yanit ver (markdown yok, kod blogu yok):
+{{"email": "ad.soyad@sirket.com", "decision_maker": "Ad Soyad", "decision_maker_title": "CEO"}}
+
+Kisisel email bulamazsan email alanini bos birak ama isim ve unvan mutlaka bul:
+{{"email": "", "decision_maker": "Ad Soyad", "decision_maker_title": "CEO"}}"""
 
         from pipeline.gemini_utils import call_gemini
         response = call_gemini(
