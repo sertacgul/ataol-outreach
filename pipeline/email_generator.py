@@ -50,26 +50,15 @@ JSON yapisi (markdown yok, kod blogu yok):
 {{
   "subject": "Konu basligi - max 60 karakter, ATAOL odakli",
   "greeting": "Sayin Ad Soyad, (veya Sayin Yetkililer,)",
-  "intro": "Firmaya ozel giris paragrafi. Sirketlerini arastirdigini goster. Max 50 kelime.",
+  "intro": "Firmaya ozel giris paragrafi. Sirketlerini arastirdigini goster, sorunlarina degin. Max 60 kelime.",
   "ataol_intro": "ATAOL AI Techs'in iki platformunu ozetleyen 1-2 cumle. Max 30 kelime.",
-  "assessment_title": "Sizin icin hazirladigimiz on degerlendirme (hedef dile cevir)",
-  "industry_label": "Sektor (hedef dile cevir)",
-  "industry_value": "Firmanin sektoru",
-  "stage_label": "Asama (hedef dile cevir)",
-  "stage_value": "Firmanin asamasi",
-  "employee_label": "Olcek (hedef dile cevir)",
-  "employee_value": "Tahminli calisan sayisi",
-  "strategic_challenges_label": "Stratejik Zorluklar (hedef dile cevir)",
-  "strategic_challenges": ["Zorluk 1", "Zorluk 2"],
-  "operational_challenges_label": "Operasyonel Zorluklar (hedef dile cevir)",
-  "operational_challenges": ["Zorluk 1", "Zorluk 2"],
   "st_value_prop": "StrategyThrust deger onerisi. 72 saat veya 1/150 fiyattan BIRINI kullan. Max 35 kelime.",
   "st_solutions": ["Bu firmaya ozel StrategyThrust cozumu 1", "Cozum 2"],
   "al_value_prop": "ActLedger deger onerisi. Sektor-spesifik KPI avantajini vurgula. Max 35 kelime.",
   "al_solutions": ["Bu firmaya ozel ActLedger cozumu 1", "Cozum 2"],
   "innovation_highlights": ["Inovasyon/dunya ilki 1", "Inovasyon 2", "Inovasyon 3"],
   "services_note": "ATAOL'un platformlar disindaki hizmetlerini (otomasyon, mobil/web uygulama, ozel yazilim) firmaya ozel 1 cumlede bahset. Max 20 kelime.",
-  "institute_note": "ATAOL AI Institute - bu firmaya ozel kurumsal egitim onerisi. Ekiplerin stratejik ve operasyonel sureclerde yapay zekayi nasil kullanabilecegine dair 1-2 cumle. Max 30 kelime. SADECE Turkce firmalar icin doldur, diger diller icin bos birak.",
+  "institute_note": "ATAOL AI Institute - bu firmaya ozel kurumsal egitim onerisi. Max 30 kelime. SADECE Turkce firmalar icin doldur, diger diller icin bos birak.",
   "closing": "Kapanıs - 'Platformlarimizin [Firma Adi]'na saglayacagi katma degeri gorusmek uzere kisa bir toplanti planlayabilir miyiz? Sizinle calismaktan mutluluk duyacagiz.' seklinde bitir. Kampanya/indirim/fiyat EKLEME. Firma adini kullan. Hedef dile cevir.",
   "cta_text": "Gorusme Planla (hedef dile cevir)"
 }}"""
@@ -107,17 +96,6 @@ def build_html_email(data, lang_code):
     greeting = data.get("greeting", "")
     intro = data.get("intro", "")
     ataol_intro = data.get("ataol_intro", "")
-    assessment_title = data.get("assessment_title", "")
-    industry_label = data.get("industry_label", "Industry")
-    industry_value = data.get("industry_value", "")
-    stage_label = data.get("stage_label", "Stage")
-    stage_value = data.get("stage_value", "")
-    employee_label = data.get("employee_label", "Scale")
-    employee_value = data.get("employee_value", "")
-    strategic_challenges_label = data.get("strategic_challenges_label", "Strategic Challenges")
-    strategic_challenges = data.get("strategic_challenges", [])
-    operational_challenges_label = data.get("operational_challenges_label", "Operational Challenges")
-    operational_challenges = data.get("operational_challenges", [])
     st_value_prop = data.get("st_value_prop", "")
     st_solutions = data.get("st_solutions", [])
     al_value_prop = data.get("al_value_prop", "")
@@ -150,46 +128,6 @@ def build_html_email(data, lang_code):
     <p style="margin:0 0 16px;font-size:15px;color:#1a1a2e;">{greeting}</p>
     <p style="margin:0 0 14px;font-size:14px;color:#444;">{intro}</p>
     <p style="margin:0 0 20px;font-size:14px;color:#555;font-style:italic;">{ataol_intro}</p>
-
-    <!-- Assessment Section -->
-    <div style="background:linear-gradient(135deg,#f8f9fc 0%,#eef1f7 100%);border-radius:10px;padding:22px 24px;margin:20px 0;border:1px solid #e2e6ed;">
-      <table style="width:100%;margin:0 0 16px;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td><p style="margin:0;font-size:15px;font-weight:700;color:#1a1a2e;">{assessment_title}</p></td>
-          <td style="text-align:right;"><span style="background:#1a1a2e;color:#4fc3f7;padding:3px 10px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:1px;">CONFIDENTIAL</span></td>
-        </tr>
-      </table>
-
-      <!-- Info Table -->
-      <table style="width:100%;border-collapse:collapse;margin:0 0 16px;" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="padding:8px 12px;background:#e3f2fd;border-radius:6px 0 0 6px;font-size:12px;font-weight:600;color:#1565c0;width:30%;">{industry_label}</td>
-          <td style="padding:8px 12px;background:#f5f7fa;border-radius:0 6px 6px 0;font-size:12px;color:#333;">{industry_value}</td>
-        </tr>
-        <tr><td colspan="2" style="height:4px;"></td></tr>
-        <tr>
-          <td style="padding:8px 12px;background:#e8f5e9;border-radius:6px 0 0 6px;font-size:12px;font-weight:600;color:#2e7d32;width:30%;">{stage_label}</td>
-          <td style="padding:8px 12px;background:#f5f7fa;border-radius:0 6px 6px 0;font-size:12px;color:#333;">{stage_value}</td>
-        </tr>
-        <tr><td colspan="2" style="height:4px;"></td></tr>
-        <tr>
-          <td style="padding:8px 12px;background:#fff3e0;border-radius:6px 0 0 6px;font-size:12px;font-weight:600;color:#e65100;width:30%;">{employee_label}</td>
-          <td style="padding:8px 12px;background:#f5f7fa;border-radius:0 6px 6px 0;font-size:12px;color:#333;">{employee_value}</td>
-        </tr>
-      </table>
-
-      <!-- Strategic Challenges -->
-      <div style="border-left:3px solid #ef5350;padding-left:14px;margin:16px 0;">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#c62828;">{strategic_challenges_label}</p>
-        {"".join(f'<p style="margin:0 0 6px;font-size:13px;color:#555;padding-left:8px;">&#9656; {c}</p>' for c in strategic_challenges)}
-      </div>
-
-      <!-- Operational Challenges -->
-      <div style="border-left:3px solid #ff9800;padding-left:14px;margin:16px 0 4px;">
-        <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#e65100;">{operational_challenges_label}</p>
-        {"".join(f'<p style="margin:0 0 6px;font-size:13px;color:#555;padding-left:8px;">&#9656; {c}</p>' for c in operational_challenges)}
-      </div>
-    </div>
 
     <!-- Platform 1: StrategyThrust -->
     <div style="background:#f8f9fc;border-radius:10px;padding:20px 24px;margin:20px 0;border-left:4px solid #1976d2;">
@@ -278,8 +216,6 @@ def build_text_email(data, lang_code):
     """Build plain text version of dual-platform email."""
     st_solutions_text = "\n".join(f"  - {s}" for s in data.get("st_solutions", []))
     al_solutions_text = "\n".join(f"  - {s}" for s in data.get("al_solutions", []))
-    strategic_text = "\n".join(f"  - {c}" for c in data.get("strategic_challenges", []))
-    operational_text = "\n".join(f"  - {c}" for c in data.get("operational_challenges", []))
     innovation_text = "\n".join(f"  * {h}" for h in data.get("innovation_highlights", []))
 
     promo_tr = "Kampanya: 3 aylik lisans alanlara +1 ay ucretsiz | Yillik lisans alanlara %15 indirim"
@@ -292,17 +228,6 @@ def build_text_email(data, lang_code):
 {data.get('intro', '')}
 
 {data.get('ataol_intro', '')}
-
-{data.get('assessment_title', '')}
-{data.get('industry_label', 'Industry')}: {data.get('industry_value', '')}
-{data.get('stage_label', 'Stage')}: {data.get('stage_value', '')}
-{data.get('employee_label', 'Scale')}: {data.get('employee_value', '')}
-
-{data.get('strategic_challenges_label', 'Strategic Challenges')}:
-{strategic_text}
-
-{data.get('operational_challenges_label', 'Operational Challenges')}:
-{operational_text}
 
 --- StrategyThrust ---
 {data.get('st_value_prop', '')}
