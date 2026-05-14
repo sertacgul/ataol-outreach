@@ -8,12 +8,7 @@ from urllib.parse import urljoin, urlparse
 if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 from bs4 import BeautifulSoup
-from google import genai
-from google.genai import types
 from database import get_db, log_activity
-from config import Config
-
-gemini_client = genai.Client(api_key=Config.GEMINI_API_KEY)
 
 EMAIL_REGEX = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
 
@@ -125,6 +120,16 @@ def extract_decision_maker(soup, text):
     return name, title
 
 
+def has_personal_email(emails):
+    """Check if any email in the list is a personal (non-generic) address."""
+    generic_prefixes = ["info@", "contact@", "hello@", "hi@", "iletisim@", "bilgi@",
+                        "sales@", "satis@", "marketing@", "support@", "destek@"]
+    for email in emails:
+        if not any(email.lower().startswith(p) for p in generic_prefixes):
+            return True
+    return False
+
+
 def scrape_company(website_url, language="tr"):
     """Scrape a company website for contact info and page content."""
     base_url = website_url.rstrip("/")
@@ -140,6 +145,8 @@ def scrape_company(website_url, language="tr"):
     all_emails = set()
     decision_maker_name = ""
     decision_maker_title = ""
+    decision_maker_linkedin = ""
+    decision_maker_bio = ""
 
     for page_url in pages_to_try:
         soup, text, raw_html = fetch_page(page_url)
@@ -150,39 +157,43 @@ def scrape_company(website_url, language="tr"):
         emails = extract_emails_from_html(raw_html)
         all_emails.update(emails)
 
-        # Try to find decision maker
+        # Try to find decision maker from HTML
         if not decision_maker_name:
             name, title = extract_decision_maker(soup, text)
             if name:
                 decision_maker_name = name
                 decision_maker_title = title
 
-        time.sleep(1)  # polite but fast
+        time.sleep(1)
 
-    # Validate all found emails (KEP filter, format, MX, patterns)
+    # Validate all found emails
     from pipeline.email_validator import validate_and_filter_emails, pick_best_email
     valid_emails, rejected = validate_and_filter_emails(list(all_emails))
     for email, reason in rejected:
         print(f"    Rejected: {email} ({reason})")
 
-    # Ask Gemini to find decision maker (always, not just when no emails)
-    gemini_result = find_contact_with_gemini(base_url, language)
-    if gemini_result.get("decision_maker"):
-        decision_maker_name = gemini_result["decision_maker"]
-        decision_maker_title = gemini_result.get("decision_maker_title", "")
-    if gemini_result.get("email"):
-        from pipeline.email_validator import validate_email as val_email
-        is_valid, reason = val_email(gemini_result["email"])
-        if is_valid:
-            valid_emails.insert(0, gemini_result["email"])
-        else:
-            print(f"    Gemini email rejected: {gemini_result['email']} ({reason})")
+    # If we have a personal email from website scrape, skip enrichment
+    needs_enrichment = not has_personal_email(valid_emails)
+
+    if needs_enrichment:
+        # Multi-source enrichment: LinkedIn + Crunchbase/website
+        from pipeline.contact_enrichment import enrich_contact
+        domain = urlparse(website_url).netloc.replace("www.", "")
+        company_name = domain.split(".")[0].title()
+        enrichment = enrich_contact(domain, company_name, language)
+
+        if enrichment["name"]:
+            decision_maker_name = enrichment["name"]
+            decision_maker_title = enrichment["title"]
+            decision_maker_linkedin = enrichment["linkedin_url"]
+            decision_maker_bio = enrichment["bio"]
+    else:
+        print(f"  Personal email found in website scrape, skipping enrichment")
 
     # Try email pattern guessing if we have a decision maker name
     if decision_maker_name:
-        pattern_email = find_personal_email_by_pattern(decision_maker_name, base_url)
+        pattern_email = find_personal_email_by_pattern(decision_maker_name, website_url)
         if pattern_email:
-            # Insert at top - this is the highest quality match
             if pattern_email not in valid_emails:
                 valid_emails.insert(0, pattern_email)
 
@@ -192,12 +203,18 @@ def scrape_company(website_url, language="tr"):
     )]
     best_email = personal_emails[0] if personal_emails else (pick_best_email(valid_emails) if valid_emails else "")
 
+    # Determine if this lead needs manual review
+    needs_manual = needs_enrichment and not best_email and not decision_maker_name
+
     return {
         "page_text": all_text[:10000],
         "emails_found": valid_emails,
         "best_email": best_email,
         "decision_maker": decision_maker_name,
         "decision_maker_title": decision_maker_title,
+        "decision_maker_linkedin": decision_maker_linkedin,
+        "decision_maker_bio": decision_maker_bio,
+        "needs_manual_review": needs_manual,
     }
 
 
@@ -276,60 +293,6 @@ def find_personal_email_by_pattern(decision_maker_name, website_url):
     return ""
 
 
-def find_contact_with_gemini(website_url, language="tr"):
-    """Use Gemini with Google Search to find decision maker name, title and email."""
-    try:
-        domain = urlparse(website_url).netloc.replace("www.", "")
-        prompt = f"""Bu sirketin ust duzey karar vericisini bul (CEO, Founder, Kurucu, Genel Mudur, CTO, Managing Director):
-{website_url}
-
-ARAMA STRATEJISI:
-1. LinkedIn'de "{domain}" sirketindeki ust duzey yoneticileri ara
-2. Sirketin "Hakkimizda" veya "About" sayfasinda yonetim kadrosunu kontrol et
-3. Crunchbase, Bloomberg veya benzer kaynaklarda kurucu/CEO bilgisini ara
-4. Turkce firmalar icin sikayetvar, kariyer.net gibi kaynaklarda firma yoneticisini ara
-
-ONCELIK SIRASI: CEO/Founder > CTO/COO > Managing Director > VP > Director > Manager
-
-ONEMLI: Kisisel email adresini bul (ad.soyad@ veya ad@ formati). info@, contact@, iletisim@ gibi genel adresleri VERME.
-
-SADECE gecerli JSON yanit ver (markdown yok, kod blogu yok):
-{{"email": "ad.soyad@sirket.com", "decision_maker": "Ad Soyad", "decision_maker_title": "CEO"}}
-
-Kisisel email bulamazsan email alanini bos birak ama isim ve unvan mutlaka bul:
-{{"email": "", "decision_maker": "Ad Soyad", "decision_maker_title": "CEO"}}"""
-
-        from pipeline.gemini_utils import call_gemini
-        response = call_gemini(
-            gemini_client,
-            Config.GEMINI_MODEL,
-            prompt,
-            config=types.GenerateContentConfig(
-                max_output_tokens=1024,
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-            ),
-        )
-
-        if response and response.text:
-            text = response.text.strip()
-            if text.startswith("```"):
-                lines = text.split("\n")
-                lines = [l for l in lines if not l.strip().startswith("```")]
-                text = "\n".join(lines)
-
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            if start >= 0 and end > start:
-                result = json.loads(text[start:end])
-                if result.get("email"):
-                    print(f"  Gemini found: {result['email']} ({result.get('decision_maker', '')})")
-                return result
-    except Exception as e:
-        print(f"  Gemini contact search failed: {e}")
-
-    return {"email": "", "decision_maker": "", "decision_maker_title": ""}
-
-
 def run_scraping(max_leads=10):
     """Scrape unscraped leads."""
     db = get_db()
@@ -356,14 +319,17 @@ def run_scraping(max_leads=10):
             )
         else:
             emails_json = json.dumps(result["emails_found"])
+            new_status = "needs_manual_review" if result.get("needs_manual_review") else "scraped"
             db.execute(
                 """UPDATE leads SET
                     emails_found = ?,
                     decision_maker = ?,
                     decision_maker_title = ?,
                     decision_maker_email = ?,
+                    decision_maker_linkedin = ?,
+                    decision_maker_bio = ?,
                     scrape_status = 'success',
-                    status = 'scraped',
+                    status = ?,
                     scraped_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?""",
@@ -372,10 +338,13 @@ def run_scraping(max_leads=10):
                     result["decision_maker"],
                     result["decision_maker_title"],
                     result["best_email"],
+                    result.get("decision_maker_linkedin", ""),
+                    result.get("decision_maker_bio", ""),
+                    new_status,
                     lead["id"],
                 ),
             )
-            # Store page text temporarily for analysis (in analysis_raw for now)
+            # Store page text for analysis
             db.execute(
                 "UPDATE leads SET analysis_raw = ? WHERE id = ?",
                 (result["page_text"], lead["id"]),
@@ -383,6 +352,8 @@ def run_scraping(max_leads=10):
             scraped += 1
             print(f"  Emails found: {result['emails_found']}")
             print(f"  Best email: {result['best_email']}")
+            if new_status == "needs_manual_review":
+                print(f"  Status: needs_manual_review (no decision maker or email found)")
 
         db.commit()
         log_activity(db, "lead_scraped", "lead", lead["id"], f"Emails: {len(result.get('emails_found', []))}")
