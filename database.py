@@ -32,6 +32,8 @@ def init_db():
             decision_maker      TEXT DEFAULT '',
             decision_maker_title TEXT DEFAULT '',
             decision_maker_email TEXT DEFAULT '',
+            decision_maker_linkedin TEXT DEFAULT '',
+            decision_maker_bio  TEXT DEFAULT '',
             company_summary     TEXT DEFAULT '',
             pain_points         TEXT DEFAULT '[]',
             service_match       TEXT DEFAULT '[]',
@@ -98,6 +100,13 @@ def init_db():
             created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+
+    # Migrate existing databases: add new columns if missing
+    existing_cols = {row[1] for row in cursor.execute("PRAGMA table_info(leads)").fetchall()}
+    if "decision_maker_linkedin" not in existing_cols:
+        cursor.execute("ALTER TABLE leads ADD COLUMN decision_maker_linkedin TEXT DEFAULT ''")
+    if "decision_maker_bio" not in existing_cols:
+        cursor.execute("ALTER TABLE leads ADD COLUMN decision_maker_bio TEXT DEFAULT ''")
 
     conn.commit()
     conn.close()
