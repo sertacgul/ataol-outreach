@@ -356,7 +356,7 @@ def run_email_generation(max_leads=10):
         """SELECT l.* FROM leads l
            WHERE l.analysis_status = 'success'
              AND l.is_excluded = 0
-             AND l.status NOT IN ('completed', 'contacted', 'email_generated')
+             AND l.status NOT IN ('completed', 'contacted', 'email_generated', 'needs_manual_review')
              AND (l.decision_maker_email != '' OR l.emails_found != '[]')
              AND l.id NOT IN (SELECT lead_id FROM emails WHERE email_type = 'initial')
            ORDER BY l.analyzed_at ASC LIMIT ?""",
