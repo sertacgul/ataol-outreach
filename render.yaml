@@ -2,6 +2,7 @@ services:
   - type: web
     name: ataol-b2b-api
     env: python
+    plan: free
     rootDir: b2b_engine_prototype
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -13,5 +14,6 @@ services:
 
 databases:
   - name: ataol-db
+    plan: free
     databaseName: ataol_prototype
     user: ataol_user
