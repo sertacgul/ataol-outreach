@@ -4,18 +4,34 @@ from contextlib import asynccontextmanager
 from database import engine, Base, AsyncSessionLocal
 from routers import router
 from seed import seed_data
+import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Application Startup
     print("Application Startup: Ensuring database tables exist...")
-    async with engine.begin() as conn:
-        # For production, Alembic migrations should be used instead of create_all
-        await conn.run_sync(Base.metadata.create_all)
+    
+    retries = 5
+    for i in range(retries):
+        try:
+            async with engine.begin() as conn:
+                # For production, Alembic migrations should be used instead of create_all
+                await conn.run_sync(Base.metadata.create_all)
+            print("Database connection successful and tables verified.")
+            break
+        except Exception as e:
+            print(f"Database connection failed (Attempt {i+1}/{retries}). It might still be provisioning: {e}")
+            if i == retries - 1:
+                raise e
+            print("Waiting 5 seconds before retrying...")
+            await asyncio.sleep(5)
         
     print("Application Startup: Seeding initial data if empty...")
-    async with AsyncSessionLocal() as session:
-        await seed_data(session)
+    try:
+        async with AsyncSessionLocal() as session:
+            await seed_data(session)
+    except Exception as e:
+        print(f"Database seeding failed: {e}")
         
     yield
     # Application Shutdown
