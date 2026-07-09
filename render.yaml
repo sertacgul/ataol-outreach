@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ataol-b2b-api
+    env: python
+    rootDir: b2b_engine_prototype
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ataol-db
+          property: connectionString
+
+databases:
+  - name: ataol-db
+    databaseName: ataol_prototype
+    user: ataol_user

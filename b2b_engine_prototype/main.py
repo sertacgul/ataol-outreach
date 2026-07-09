@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from database import engine, Base, AsyncSessionLocal
 from routers import router
@@ -26,6 +27,20 @@ app = FastAPI(
     description="Apollo.io Clone MVP Prototype using FastAPI, async SQLAlchemy, and PostgreSQL",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# Add CORS Middleware to allow requests from the GitHub Pages frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://sertacgul.github.io", 
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*" # Temporarily allow all for prototype testing if needed, though specific is better
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include the main router for API endpoints
